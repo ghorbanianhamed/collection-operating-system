@@ -13,6 +13,37 @@ This is the accounts-receivable (AR) collections system I designed and built. It
 
 ---
 
+## Skills & technologies
+
+### Technologies
+
+| Area | Used in this project |
+|---|---|
+| **Language** | JavaScript (Google Apps Script, V8 runtime) |
+| **Platform** | Google Sheets, Google Apps Script, Microsoft Excel (.xlsx) |
+| **API integration** | QuickBooks Online Accounting API (REST + JSON); QuickBooks query language (`SELECT … FROM Invoice / CreditMemo / Payment`); paginated requests |
+| **Authentication & security** | OAuth 2.0 authorization-code flow; access and refresh tokens with automatic refresh; CSRF protection with a one-time `state` value; credentials kept out of the code in Script Properties; token revocation on logout |
+| **Apps Script services** | `UrlFetchApp` (HTTP calls), `HtmlService` + `doGet()` (OAuth callback web app), `PropertiesService` (credential storage), `LockService` (stops two refreshes running at once), `SpreadsheetApp` (custom menu, sheet updates, sorting, formatting) |
+| **Spreadsheet engineering** | Dynamic array formulas (`MAP`, `LAMBDA`, `SORT`, `UNIQUE`, `FILTER`), `SUMIFS` / `COUNTIFS` / `AVERAGEIFS`, `VLOOKUP`, `IFERROR`, `TODAY()`/`WEEKDAY()` date windows, data validation dropdowns, conditional formatting, cross-tab lookups |
+| **Version control & docs** | Git, GitHub, Markdown, Mermaid diagrams |
+
+### Skills
+
+| Skill | Where it shows |
+|---|---|
+| **Customer credit-risk scoring** | On-time reliability rate per customer, turned into a 🟢 / 🟡 / 🔴 rating |
+| **Payment terms & pricing strategy** | Six term tiers, from an early-payment discount down to cash in advance, set automatically by each customer's risk |
+| **Accounts receivable & collections** | A full weekly cycle: pull, prioritize, follow up, confirm payment, archive |
+| **Financial reporting & KPIs** | CFO dashboard: Expected This Week, Confirmed, At Risk, Promised vs. Collected, Variance |
+| **Process automation** | One-click menu that replaces manual QuickBooks exports and copy-paste |
+| **Systems integration** | Connecting an accounting system (QuickBooks Online) to a reporting tool (Google Sheets) |
+| **Data modeling** | Linked tabs: Invoices → weekly report → Master AR Log → Scorecard → back to the weekly report |
+| **Data quality controls** | Duplicate prevention, checking payments against QuickBooks before archiving, and the audit tool |
+| **Data privacy** | Customer codes in place of names, fictional amounts, and no credentials in the code |
+| **Process documentation** | In-workbook integration guide, README, weekly operating routine |
+
+---
+
 ## See the workbook
 
 | Tab | Screenshot | Browse in GitHub |
