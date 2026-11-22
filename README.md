@@ -2,140 +2,139 @@
 
 **The point of this system is to rate every customer on how reliably they pay, calculate their risk rate, and use that rating to decide how hard to follow up with them and what payment terms and pricing to offer them next time.**
 
-This is the accounts-receivable (AR) workbook I designed and ran for weekly collections. Every paid invoice feeds a customer scorecard, and each customer's risk rating flows back into the weekly CEO report. So whoever chases payments always knows **who is a risk, who to call first, and when to tighten a customer's terms.**
+This is the accounts-receivable (AR) collections system I designed and built. It has two parts:
 
-> 📊 **Workbook:** [`sample/Collections-Operating-System.xlsx`](sample/Collections-Operating-System.xlsx)
-> The structure, formulas and workflow are the real ones. **All customer names, invoice numbers, amounts and staff names have been replaced with fictional data.**
+1. **A QuickBooks Online integration** written in JavaScript (Google Apps Script). It pulls invoices and payments straight from QuickBooks into Google Sheets.
+2. **A customer-rating workbook** that turns every payment into an on-time reliability rate, a 🟢 / 🟡 / 🔴 risk rating, and recommended terms for that customer's next order.
+
+> 📊 **Workbook:** [`sample/Collections-Operating-System.xlsx`](sample/Collections-Operating-System.xlsx). Its first tab, **QuickBooks Integration**, documents the whole process.
+> 💻 **Script:** [`src/Code.gs`](src/Code.gs)
+> The structure, formulas and code are the real ones. **Customers are shown as codes (`CUST-001` … `CUST-013`), and all invoice numbers and amounts are fictional.**
 
 ---
 
-## How a customer gets rated
+## How it works
 
+```mermaid
+flowchart TD
+    QBO[QuickBooks Online] -->|OAuth 2.0 + REST API| JS[Google Apps Script<br/>JavaScript]
+    JS -->|1. Pull Invoices| INV[Invoices tab]
+    INV -->|2. Load New Invoices| CEO[Weekly AR Collections CEO]
+    QBO -->|3. Sync Paid Dates| CEO
+    CEO -->|4. Archive Paid Invoices| LOG[Master AR Log]
+    LOG -->|formulas| SC[Customer Reliability Scorecard<br/>reliability % → 🟢🟡🔴 → terms]
+    SC -->|rating + terms on every open invoice| CEO
 ```
- Paid invoice ──► Master AR Log ──► Scorecard ──────► Risk Rating ──► Terms & Follow-Up
-                  (on time? days    (on-time          🟢 🟡 🔴         (Standard / Net 15 / CIA,
-                   late?)            reliability %)                     email vs. phone)
-                                                                              │
-                                                                              ▼
-                                            Weekly AR Collections (CEO) shows the rating
-                                            and terms next to every open invoice
-```
+
+---
+
+## Part 1: the QuickBooks integration (JavaScript)
+
+The script adds a **QuickBooks Integration** menu to Google Sheets:
+
+<img src="docs/quickbooks-menu.png" alt="QuickBooks Integration menu in Google Sheets" width="300">
+
+| Menu item | JavaScript function | What it does | Tab it updates |
+|---|---|---|---|
+| **Authorize App** | `startOAuthFlow()` → `doGet()` | Opens the Intuit login. After approval, Intuit redirects back to the script's web app. The app swaps the one-time code for access and refresh tokens and stores them in Script Properties. | — |
+| **1. Pull Invoices from QBO** | `fetchInvoices()` | Queries every open Invoice and Credit Memo (1,000 per page), sorts them by customer, writes the list with a grand total, and highlights overdue due dates. | Invoices |
+| **2. Load New Invoices to Weekly Report** | `loadNewInvoicesToWeeklyReport()` | Adds invoices due in the next 14 days or already past due (balance over $2) that aren't on the report yet. Adds the Status dropdown and the Risk Rating / Recommended Terms lookups, then sorts by due date. | Weekly AR Collections (CEO) |
+| **3. Sync Paid Dates from QBO** | `syncPaidDatesFromQBO()` | Asks QuickBooks which invoices are now fully paid, finds the Payment applied to each one, marks the row **Paid** and writes the real payment date. Warns about rows marked Paid that QuickBooks doesn't show as paid. | Weekly AR Collections (CEO) |
+| **4. Archive Paid Invoices** | `closeOutLastWeek()` | Moves confirmed-paid rows to the Master AR Log. Refuses rows that QuickBooks still shows open, and never logs the same invoice twice. **This is what feeds the customer ratings.** | Master AR Log |
+| **Accident-Proofing** | `buildModernCEODashboardHeader()` | Rebuilds the six KPI tiles and their live formulas if someone breaks the top of the report. | Weekly AR Collections (CEO) |
+| **Audit Master AR Log** | `auditMasterARLog()` | Highlights duplicate rows, and rows logged as paid that QuickBooks still shows open. Deletes nothing. | Master AR Log |
+| **Reset Connection / Logout** | `clearOAuthTokens()` | Revokes the token at Intuit and clears the stored credentials. | — |
+
+### How the connection works (OAuth 2.0)
+
+1. **Authorize:** the script builds an Intuit login link with a random one-time `state` value (CSRF protection) and the `com.intuit.quickbooks.accounting` scope.
+2. **Callback:** Intuit redirects to the script's web app. `doGet()` checks that the `state` matches, then saves the company ID (`realmId`).
+3. **Tokens:** the code is exchanged for an access token (valid about 1 hour) and a refresh token. Both are kept in **Script Properties**, never in the sheet or the code.
+4. **Auto-refresh:** `getValidAccessToken()` refreshes the token 60 seconds before it expires, with a lock so two clicks can't refresh at the same time.
+
+### QuickBooks API queries
+
+| Purpose | Query |
+|---|---|
+| Open invoices | `SELECT * FROM Invoice WHERE Balance > '0.00'` |
+| Open credit memos | `SELECT * FROM CreditMemo WHERE Balance > '0.00'` |
+| Recently paid invoices | `SELECT * FROM Invoice WHERE Balance = '0.00' AND MetaData.LastUpdatedTime >= '<60 days ago>'` |
+| Payment dates | `SELECT * FROM Payment WHERE TxnDate >= '<60 days ago>'` (linked to invoices to get the real paid date) |
+
+All queries page through results with `STARTPOSITION` / `MAXRESULTS` (`qboQueryAll()`), so large accounts aren't cut off at QuickBooks' 100-row default.
+
+### Setup (for your own QuickBooks company)
+
+1. Create an app at [developer.intuit.com](https://developer.intuit.com) with the `com.intuit.quickbooks.accounting` scope.
+2. In Google Sheets, open **Extensions → Apps Script** and paste in `src/Code.gs`.
+3. Deploy it as a **Web App** and copy the URL.
+4. In **Project Settings → Script Properties**, add `CLIENT_ID`, `CLIENT_SECRET` and `REDIRECT_URI` (the Web App URL).
+5. Add the same URL as a Redirect URI in the Intuit portal, reload the sheet, then click **QuickBooks Integration → Authorize App**.
+
+> Anyone with edit access to the spreadsheet can read Script Properties, which hold the credentials, so only give edit access to people you trust with your books.
+
+---
+
+## Part 2: customer ratings
+
+### How a customer gets rated
 
 1. **Every paid invoice is logged** in the **Master AR Log** with its promised date and the date it was actually paid.
-2. **On time or late?**
-   - **On Time?** = `Yes` if the invoice was paid on or before the **Promised Date**.
-   - **Days Variance** = the number of days between the promised date and the payment.
-3. **Risk rate:** **On-Time Reliability % = on-time payments ÷ total invoices paid**, for each customer.
-4. **Risk rating and the action that follows:**
+2. **On Time?** = `Yes` if it was paid on or before the promised date. **Days Variance** = how many days late it was.
+3. **Risk rate:** **On-Time Reliability % = on-time payments ÷ total invoices paid**, per customer.
+4. **The color sets how hard to follow up, and the band inside each color sets the terms:**
 
-   | Rating | Rule | Recommended Terms | Follow-Up |
-   |---|---|---|---|
-   | 🟢 Green | Reliability **≥ 80%** | **Standard Terms** | Email reminder |
-   | 🟡 Amber | Reliability **≥ 50%** and < 80% | **Net 15**: shorter credit | Phone call to confirm date, amount and payment method |
-   | 🔴 Red | Reliability **< 50%** | **CIA**: cash in advance, no credit | Phone call. Escalate. |
+| Rating | On-Time Reliability % | Recommended Terms / Pricing | Follow-up |
+|---|---|---|---|
+| 🟢 Green | **90% or more** | **Standard Terms + 2% early-payment discount** | Email reminder before the due date |
+| 🟢 Green | **80% – 89%** | **Standard Terms** | Email reminder before the due date |
+| 🟡 Amber | **65% – 79%** | **Net 15** | Phone call to confirm date, amount and payment method |
+| 🟡 Amber | **50% – 64%** | **Net 15 + 25% deposit on new orders** | Phone call to confirm date, amount and payment method |
+| 🔴 Red | **30% – 49%** | **COD** (cash on delivery) | Phone call, escalate to the owner |
+| 🔴 Red | **Under 30%** | **CIA** (cash in advance) | Phone call, escalate, hold new orders |
 
-   The **Recommended Terms** are the pricing and credit decision. A 🔴 customer has to pay before the next order ships, and a 🟡 customer gets less time to pay.
+Every customer's rating and terms update automatically each time an invoice is archived. The terms also appear on the weekly report next to every open invoice, so the team sees them before quoting or shipping the next order.
+
+### Customer codes
+Customers are identified by **customer codes** (`CUST-001`, `CUST-002`, …) instead of names, on every tab.
 
 ---
 
-## The tabs
+## The workbook tabs
 
-### 1. Weekly AR Collections (CEO)
-The one-page weekly report for the CEO.
+| Tab | Purpose |
+|---|---|
+| **QuickBooks Integration** | Documentation of the integration: data flow, the menu and its JavaScript functions, OAuth, API queries, rating rules and the weekly routine |
+| **Weekly AR Collections (CEO)** | One-page weekly report: six KPI tiles plus every invoice due in the next 14 days or past due, with each customer's live rating and terms |
+| **Customer Reliability Scorecard** | Builds itself from the Master AR Log: total invoices, on-time payments, missed promises, **reliability %**, average days late, **risk rating**, **recommended terms** |
+| **Master AR Log** | Permanent history of paid invoices; **On Time?** and **Days Variance** are calculated |
+| **Invoices** | The open invoices and credit memos pulled from QuickBooks, with a grand total |
 
-**KPI tiles (rows 1–6):**
+### KPI tiles on the CEO report
 
 | Tile | What it shows |
 |---|---|
-| **Expected This Week** | Open invoices with an Expected Pay Date in this week |
-| **Confirmed (🟢)** | The part of Expected This Week owed by 🟢 customers |
-| **At Risk (🟡 + 🔴)** | Expected This Week minus Confirmed |
-| **Last Week Promised** | Everything customers promised to pay last week (this tab and the Master AR Log) |
-| **Collected Last Week** | What was actually paid last week, from the Master AR Log |
-| **Variance** | Promised minus Collected: how much of last week's promises were broken |
+| **Expected This Week** | Open invoices expected to be paid this week |
+| **Confirmed (🟢)** | The part owed by 🟢 customers |
+| **At Risk (🟡 + 🔴)** | Expected minus Confirmed |
+| **Last Week Promised** | Everything customers promised to pay last week |
+| **Collected Last Week** | What was actually paid last week |
+| **Variance** | Promised minus Collected: broken promises |
 
-**Table: UPCOMING & OPEN INVOICES (next 14 days and past due)**
+**Status dropdown values:** Confirmed · Promised · Approved · In process · Disputed · Unresponsive · Not contacted · Paid
 
-| Column | Meaning |
-|---|---|
-| Invoice · Customer · Amount · Due Date | The open invoice |
-| Expected Pay Date | The date the customer committed to |
-| Status | A dropdown (see the definitions below) |
-| Last Contact · Next Touchpoint | The follow-up log |
-| **Risk Rating** | Formula: the customer's live rating from the Scorecard |
-| Risk Note | Context, e.g. a dispute or a cash-flow problem |
-| **Recommended Terms** | Formula: the customer's terms from the Scorecard |
-| Actual Paid Date | Filled in when the payment arrives |
+### Weekly routine
 
-### 2. Customer Reliability Scorecard
-**The heart of the system.** It builds itself: the customer list and every column are formulas over the Master AR Log.
-
-| Column | Calculation |
-|---|---|
-| Customer Name | Every customer that appears in the Master AR Log |
-| Total Invoices | Number of paid invoices |
-| On-Time Payments | Paid invoices where On Time? = Yes |
-| Missed Promises | Paid invoices where On Time? = No |
-| **On-Time Reliability %** | On-Time ÷ Total. **This is the customer's risk rate.** |
-| Avg Days Late | Average Days Variance of the late payments |
-| **Current Risk Rating** | 🟢 ≥ 80% · 🟡 ≥ 50% · 🔴 below 50% |
-| **Recommended Terms** | 🟢 Standard Terms · 🟡 Net 15 · 🔴 CIA |
-
-### 3. Master AR Log
-The permanent history of paid invoices: Invoice, Customer, Amount, Due Date, Promised Date, Status, Last Contact, Next Touchpoint, Risk (the rating when it was paid), Risk Note and Actual Paid Date. **On Time?** and **Days Variance** are calculated. The ratings are only as good as this log, so log each invoice once, and only once the payment has actually arrived.
-
-### 4. Invoices
-Every open invoice and credit memo: Invoice ID, Doc Number, Customer, Txn Date, Due Date, Total Amount and Balance, with a grand total.
-- Overdue due dates are highlighted.
-- Credit memos show negative amounts.
-
-### 5. Instructions & SOP
-The operating procedure: who does what, on which day, with which tab, plus the definitions below.
-
----
-
-## Weekly operating routine
-
-| Day | Owner | Task | Tab |
-|---|---|---|---|
-| Monday AM | AR Manager & AR Specialist | Close out last week's results in the Master AR Log. Load invoices due in the next 14 days, plus open past-dues, into the weekly report. | Master AR Log → Weekly Report |
-| Monday AM | AR Specialist | Send the list of active accounts to the Operations Lead for a quality/delivery dispute check | Weekly Report |
-| Tuesday | AR Manager & AR Specialist | Clear internal invoice blockers. Resolve delivery/PO issues with Operations **before** contacting the customer. | Weekly Report |
-| Wednesday | AR Specialist | Contact every customer: **email 🟢 accounts; call 🟡 and 🔴 accounts** to confirm the date, amount and payment method | Weekly Report |
-| Thursday | AR Specialist | Follow up with non-responders **by phone (never a second email)**. Update statuses and risk notes. | Weekly Report |
-| Friday AM | AR Specialist | Deliver the one-page weekly AR report to the CEO. Flag exceptions only. | Weekly Report |
-
-### Status definitions
-
-| Status | Meaning |
-|---|---|
-| Confirmed | Payment is scheduled in the customer's AP run for a named date |
-| Promised | A person gave us a date, but their AP system hasn't confirmed it |
-| Approved | Invoice is approved in their AP system but not yet scheduled |
-| In process | Sitting in their approval workflow, with no date given yet |
-| Disputed | The customer is contesting the amount, scope or documentation |
-| Unresponsive | No real reply in two or more contact cycles |
-| Not contacted | We haven't tried to contact them about this invoice this cycle |
-| Paid | Payment received |
-
-### Risk rating definitions (judgement guide)
-
-| Rating | Signals |
-|---|---|
-| 🟢 Green | Confirmed status, no open dispute, paid on time 2+ times in a row |
-| 🟡 Amber | Promised but unconfirmed, first payment, date moved, or a documentation issue |
-| 🔴 Red | 2+ broken promises, disputed, unresponsive, more than 30 days past due, or signs of financial distress |
+| When | Menu steps | Result |
+|---|---|---|
+| Monday | **1. Pull Invoices → 2. Load New Invoices** | This week's collection list, with every customer rated |
+| Tue – Thu | Work the list, 🔴 and 🟡 first | Statuses, expected dates and notes updated |
+| Friday | **3. Sync Paid Dates → 4. Archive Paid Invoices** | Paid invoices logged; every customer re-rated automatically |
 
 ---
 
 ## Opening the workbook
 
-**Use Google Sheets:** File → Import → Upload → *Replace spreadsheet*. The Scorecard uses Google Sheets array formulas (`SORT`, `UNIQUE`, `FILTER`, `MAP`, `LAMBDA`), so Excel will show those columns as static values instead of recalculating them. The KPI tiles use `TODAY()`, so they move with the calendar.
+**Use Google Sheets:** File → Import → Upload → *Replace spreadsheet*. The Scorecard uses Google Sheets array formulas (`SORT`, `UNIQUE`, `FILTER`, `MAP`, `LAMBDA`), so Excel shows those columns as static values instead of recalculating them.
 
 > Excel limits tab names to 31 characters, so two tabs are named **Weekly AR Collections (CEO)** and **Customer Reliability Scorecard**.
-
----
-
-## Optional: automation script
-
-[`src/Code.gs`](src/Code.gs) is a Google Apps Script that can automate the weekly routine: loading invoices, marking payments, archiving to the Master AR Log, rebuilding the KPI tiles and auditing the log. **It isn't needed to use the workbook, and this repository isn't connected to any accounting system.** To use it you need your own QuickBooks Online developer app, with its credentials stored in Script Properties (never in the code).
