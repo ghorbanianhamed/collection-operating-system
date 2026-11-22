@@ -9,7 +9,7 @@ This is the accounts-receivable (AR) collections system I designed and built. It
 
 > 📊 **Workbook:** [`sample/Collections-Operating-System.xlsx`](sample/Collections-Operating-System.xlsx). Its first tab, **QuickBooks Integration**, documents the whole process.
 > 💻 **Script:** [`src/Code.gs`](src/Code.gs)
-> The structure, formulas and code are the real ones. **Customers are shown as codes (`CUST-001` … `CUST-013`), and all invoice numbers and amounts are fictional.**
+> The structure, formulas and code are the real ones. **The data covers 255 customers, shown as codes `CUST-001` … `CUST-255`, and 1,300 paid invoices. All invoice numbers and amounts are fictional.**
 
 ---
 
@@ -96,7 +96,7 @@ All queries page through results with `STARTPOSITION` / `MAXRESULTS` (`qboQueryA
 Every customer's rating and terms update automatically each time an invoice is archived. The terms also appear on the weekly report next to every open invoice, so the team sees them before quoting or shipping the next order.
 
 ### Customer codes
-Customers are identified by **customer codes** (`CUST-001`, `CUST-002`, …) instead of names, on every tab.
+Customers are identified by **customer codes** (`CUST-001` … `CUST-255`) instead of names, on every tab. The sample Master AR Log holds **1,300 paid invoices**, so the Scorecard rates **255 customers** across all six term tiers.
 
 ---
 
@@ -107,7 +107,7 @@ Customers are identified by **customer codes** (`CUST-001`, `CUST-002`, …) ins
 | **QuickBooks Integration** | Documentation of the integration: data flow, the menu and its JavaScript functions, OAuth, API queries, rating rules and the weekly routine |
 | **Weekly AR Collections (CEO)** | One-page weekly report: six KPI tiles plus every invoice due in the next 14 days or past due, with each customer's live rating and terms |
 | **Customer Reliability Scorecard** | Builds itself from the Master AR Log: total invoices, on-time payments, missed promises, **reliability %**, average days late, **risk rating**, **recommended terms** |
-| **Master AR Log** | Permanent history of paid invoices; **On Time?** and **Days Variance** are calculated |
+| **Master AR Log** | Permanent history of paid invoices (1,300 in the sample); **On Time?** and **Days Variance** are calculated |
 | **Invoices** | The open invoices and credit memos pulled from QuickBooks, with a grand total |
 
 ### KPI tiles on the CEO report
