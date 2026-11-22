@@ -10,10 +10,10 @@ var REVOKE_URL             = 'https://developer.api.intuit.com/v2/oauth2/tokens/
 var PRODUCTION_API_URL     = 'https://quickbooks.api.intuit.com/v3/company/';
 var QBO_MINOR_VERSION      = '75';
 
-var CEO_TAB       = 'Weekly AR Collections (CEO VIEW)';
+var CEO_TAB       = 'Weekly AR Collections (CEO)';
 var MASTER_TAB    = 'Master AR Log';
 var INVOICES_TAB  = 'Invoices';
-var SCORECARD_TAB = 'Customer Payment Reliability Scorecard';
+var SCORECARD_TAB = 'Customer Reliability Scorecard';
 var TABLE1_TITLE  = 'UPCOMING & OPEN INVOICES';
 var CEO_COLS      = 12;   // A..L on the CEO View (L = Actual Paid Date)
 var MIN_BALANCE   = 2;    // ignore penny balances left over in QBO
@@ -798,7 +798,7 @@ function auditMasterARLog() {
     'Light RED rows: ' + openRows + ' row(s) logged as Paid but QuickBooks still shows them open ' +
     '(' + Object.keys(openDocs).length + ' invoices, $' + openTotal.toFixed(2) + ' outstanding).\n\n' +
     'Light YELLOW rows: ' + dupRows + ' row(s) belong to invoices logged more than once.\n\n' +
-    'Nothing was deleted. These rows feed the Customer Payment Reliability Scorecard, so review and ' +
+    'Nothing was deleted. These rows feed the Customer Reliability Scorecard, so review and ' +
     'remove the bad ones by hand. Based on the Invoices tab — run step 1 first for current balances.',
     ui.ButtonSet.OK);
 }
