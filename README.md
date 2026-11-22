@@ -1,145 +1,141 @@
 # Collection Operating System
 
-**The point of this system is to rate every customer on how reliably they pay, turn that into a risk rating, and use the rating to decide how hard to follow up with them and what terms and pricing to offer them next time.**
+**The point of this system is to rate every customer on how reliably they pay, calculate their risk rate, and use that rating to decide how hard to follow up with them and what payment terms and pricing to offer them next time.**
 
-It's a set of linked spreadsheet tabs that I built to run weekly accounts-receivable (AR) collections. Every paid invoice feeds a customer scorecard, and each customer's rating flows back into the weekly collections view. So whoever chases payments always knows **who is a risk, how hard to follow up, and whether to tighten terms or change pricing.**
+This is the accounts-receivable (AR) workbook I designed and ran for weekly collections. Every paid invoice feeds a customer scorecard, and each customer's risk rating flows back into the weekly CEO report. So whoever chases payments always knows **who is a risk, who to call first, and when to tighten a customer's terms.**
 
-> 📊 **Sample workbook:** [`sample/Collection-Operating-System-Sample.xlsx`](sample/Collection-Operating-System-Sample.xlsx)
-> All customer names, invoice numbers and amounts in it are **fictional sample data**.
+> 📊 **Workbook:** [`sample/Collections-Operating-System.xlsx`](sample/Collections-Operating-System.xlsx)
+> The structure, formulas and workflow are the real ones. **All customer names, invoice numbers, amounts and staff names have been replaced with fictional data.**
 
 ---
 
 ## How a customer gets rated
 
 ```
- Paid invoice ──► Master AR Log ──► Scorecard ──► Risk Rating ──► Terms · Follow-Up · Pricing
-                  (on time? how      (reliability   🟢 🟡 🔴        (Rating Rules tab)
-                   many days late?)   rate %)                              │
-                                                                           ▼
-                                               Weekly AR Collections (CEO) shows the rating
-                                               and terms next to every open invoice
+ Paid invoice ──► Master AR Log ──► Scorecard ──────► Risk Rating ──► Terms & Follow-Up
+                  (on time? days    (on-time          🟢 🟡 🔴         (Standard / Net 15 / CIA,
+                   late?)            reliability %)                     email vs. phone)
+                                                                              │
+                                                                              ▼
+                                            Weekly AR Collections (CEO) shows the rating
+                                            and terms next to every open invoice
 ```
 
 1. **Every paid invoice is logged** in the **Master AR Log** with its promised date and the date it was actually paid.
 2. **On time or late?**
-   - **On Time?** = `Yes` if the invoice was paid on or before the **Promised Date**. If no promise was made, the **Due Date** is used instead.
-   - **Days Variance** = how many days late (or early, if negative) the payment was.
-3. **Reliability rate:** **On-Time Reliability % = on-time payments ÷ total invoices paid**, for each customer.
-4. **Risk rating:**
+   - **On Time?** = `Yes` if the invoice was paid on or before the **Promised Date**.
+   - **Days Variance** = the number of days between the promised date and the payment.
+3. **Risk rate:** **On-Time Reliability % = on-time payments ÷ total invoices paid**, for each customer.
+4. **Risk rating and the action that follows:**
 
-   | Rating | Rule (default) | Risk |
-   |---|---|---|
-   | 🟢 | Reliability **≥ 80%** | Low |
-   | 🟡 | Reliability **≥ 50%** and < 80% | Medium |
-   | 🔴 | Reliability **< 50%** | High |
-   | No History | No paid invoices yet | Unknown |
-
-5. **Action:** each rating sets the customer's **Recommended Terms**, **Follow-Up Plan** and **Pricing Action**:
-
-   | Rating | Recommended Terms | Follow-Up Plan | Pricing Action |
+   | Rating | Rule | Recommended Terms | Follow-Up |
    |---|---|---|---|
-   | 🟢 | Standard Terms | Courtesy reminder 3 days before the due date | Standard pricing. Eligible for an early-payment discount. |
-   | 🟡 | Net 15 | Reminder 7 days before due, a call on the due date, then every 3 days | No discounts. Consider a deposit or late-fee clause on new orders. |
-   | 🔴 | CIA (cash in advance) | Call weekly from the due date; escalate to the owner at 7 days late; hold new orders | Cash in advance on new orders. Add a risk premium to quoted prices. |
+   | 🟢 Green | Reliability **≥ 80%** | **Standard Terms** | Email reminder |
+   | 🟡 Amber | Reliability **≥ 50%** and < 80% | **Net 15**: shorter credit | Phone call to confirm date, amount and payment method |
+   | 🔴 Red | Reliability **< 50%** | **CIA**: cash in advance, no credit | Phone call. Escalate. |
 
-   The thresholds and actions live on the **Rating Rules** tab. Change a yellow cell there and every customer is re-rated instantly.
+   The **Recommended Terms** are the pricing and credit decision. A 🔴 customer has to pay before the next order ships, and a 🟡 customer gets less time to pay.
 
 ---
 
 ## The tabs
 
-### 1. How It Works
-A one-page summary of the system and a guide to the tabs.
-
-### 2. Weekly AR Collections (CEO)
-The weekly page for the CEO and the collections team.
+### 1. Weekly AR Collections (CEO)
+The one-page weekly report for the CEO.
 
 **KPI tiles (rows 1–6):**
 
 | Tile | What it shows |
 |---|---|
-| **Expected This Week** | Open invoices expected to be paid this week (Sunday to Saturday). It uses the **Expected Pay Date**, or the **Due Date** if no expected date has been entered. Rows marked Paid are excluded. |
-| **Confirmed (🟢)** | The part of Expected This Week owed by customers rated 🟢. |
-| **At Risk (🟡 + 🔴)** | Expected This Week minus Confirmed: money owed by risky customers. |
-| **Last Week Promised** | Everything customers promised to pay last week. |
-| **Collected Last Week** | What was actually paid last week, from the Master AR Log. |
-| **Variance** | Promised minus Collected. A positive number means customers broke promises. |
+| **Expected This Week** | Open invoices with an Expected Pay Date in this week |
+| **Confirmed (🟢)** | The part of Expected This Week owed by 🟢 customers |
+| **At Risk (🟡 + 🔴)** | Expected This Week minus Confirmed |
+| **Last Week Promised** | Everything customers promised to pay last week (this tab and the Master AR Log) |
+| **Collected Last Week** | What was actually paid last week, from the Master AR Log |
+| **Variance** | Promised minus Collected: how much of last week's promises were broken |
 
 **Table: UPCOMING & OPEN INVOICES (next 14 days and past due)**
 
-| Column | Filled by | Meaning |
-|---|---|---|
-| Invoice, Customer, Amount, Due Date | Invoices tab | The open invoice |
-| Expected Pay Date | You | The date the customer says they'll pay |
-| Status | You (dropdown) | Confirmed · Promised · Approved · In process · Disputed · Unresponsive · Not contacted · Paid |
-| Last Contact / Next Touchpoint | You | Your follow-up log |
-| **Risk Rating** | Formula | The customer's live rating from the Scorecard |
-| Risk Note | You | Context, e.g. "disputing short shipment" |
-| **Recommended Terms** | Formula | Terms from the Scorecard |
-| Actual Paid Date | You | Filled in when the invoice is paid |
-
-### 3. Customer Reliability Scorecard
-**The heart of the system.** There is one row per customer, and every column is a formula calculated from the Master AR Log:
-
-| Column | Formula logic |
+| Column | Meaning |
 |---|---|
-| Total Invoices | Number of paid invoices for the customer |
+| Invoice · Customer · Amount · Due Date | The open invoice |
+| Expected Pay Date | The date the customer committed to |
+| Status | A dropdown (see the definitions below) |
+| Last Contact · Next Touchpoint | The follow-up log |
+| **Risk Rating** | Formula: the customer's live rating from the Scorecard |
+| Risk Note | Context, e.g. a dispute or a cash-flow problem |
+| **Recommended Terms** | Formula: the customer's terms from the Scorecard |
+| Actual Paid Date | Filled in when the payment arrives |
+
+### 2. Customer Reliability Scorecard
+**The heart of the system.** It builds itself: the customer list and every column are formulas over the Master AR Log.
+
+| Column | Calculation |
+|---|---|
+| Customer Name | Every customer that appears in the Master AR Log |
+| Total Invoices | Number of paid invoices |
 | On-Time Payments | Paid invoices where On Time? = Yes |
-| Missed Promises | Total minus On-Time |
+| Missed Promises | Paid invoices where On Time? = No |
 | **On-Time Reliability %** | On-Time ÷ Total. **This is the customer's risk rate.** |
-| Avg Days Late | Average days late, counting late payments only |
-| **Current Risk Rating** | 🟢 / 🟡 / 🔴, using the thresholds on Rating Rules |
-| **Recommended Terms** | From Rating Rules |
-| **Follow-Up Plan** | From Rating Rules |
-| **Pricing Action** | From Rating Rules |
-| Open AR Balance | What the customer owes right now (from the Invoices tab): your exposure to that customer |
+| Avg Days Late | Average Days Variance of the late payments |
+| **Current Risk Rating** | 🟢 ≥ 80% · 🟡 ≥ 50% · 🔴 below 50% |
+| **Recommended Terms** | 🟢 Standard Terms · 🟡 Net 15 · 🔴 CIA |
 
-### 4. Rating Rules
-The only settings you need to touch:
-- The 🟢 and 🟡 reliability thresholds.
-- The terms, follow-up plan and pricing action for each rating.
+### 3. Master AR Log
+The permanent history of paid invoices: Invoice, Customer, Amount, Due Date, Promised Date, Status, Last Contact, Next Touchpoint, Risk (the rating when it was paid), Risk Note and Actual Paid Date. **On Time?** and **Days Variance** are calculated. The ratings are only as good as this log, so log each invoice once, and only once the payment has actually arrived.
 
-Yellow cells are inputs.
+### 4. Invoices
+Every open invoice and credit memo: Invoice ID, Doc Number, Customer, Txn Date, Due Date, Total Amount and Balance, with a grand total.
+- Overdue due dates are highlighted.
+- Credit memos show negative amounts.
 
-### 5. Master AR Log
-The history of every paid invoice, newest first. **On Time?** and **Days Variance** are formulas. The ratings are only as good as this log, so:
-- Log each invoice **once**.
-- Only log an invoice as Paid when the payment is actually received.
-
-### 6. Invoices
-The list of open invoices and credit memos: Invoice ID, Doc Number, Customer, Txn Date, Due Date, Total and Balance, with a grand total. Credit memos are shown with negative amounts. Balances of $2 or less (rounding leftovers) are ignored by the CEO view.
+### 5. Instructions & SOP
+The operating procedure: who does what, on which day, with which tab, plus the definitions below.
 
 ---
 
-## Weekly routine
+## Weekly operating routine
 
-1. **Monday:** update the **Invoices** tab with this week's open invoices, and add any new ones due in the next 14 days (or past due) to the CEO view.
-2. **During the week:** chase payments in the order the **Risk Rating** and **Follow-Up Plan** suggest (🔴 first). Record Status, Expected Pay Date, Last Contact and Next Touchpoint.
-3. **When a payment arrives:** set Status to **Paid** and enter the **Actual Paid Date**.
-4. **End of week:** move Paid rows to the **Master AR Log**. The Scorecard re-rates every customer automatically, and next week's terms, follow-ups and pricing follow from it.
-5. **When quoting or taking a new order:** check the customer's **Recommended Terms** and **Pricing Action** on the Scorecard first.
+| Day | Owner | Task | Tab |
+|---|---|---|---|
+| Monday AM | AR Manager & AR Specialist | Close out last week's results in the Master AR Log. Load invoices due in the next 14 days, plus open past-dues, into the weekly report. | Master AR Log → Weekly Report |
+| Monday AM | AR Specialist | Send the list of active accounts to the Operations Lead for a quality/delivery dispute check | Weekly Report |
+| Tuesday | AR Manager & AR Specialist | Clear internal invoice blockers. Resolve delivery/PO issues with Operations **before** contacting the customer. | Weekly Report |
+| Wednesday | AR Specialist | Contact every customer: **email 🟢 accounts; call 🟡 and 🔴 accounts** to confirm the date, amount and payment method | Weekly Report |
+| Thursday | AR Specialist | Follow up with non-responders **by phone (never a second email)**. Update statuses and risk notes. | Weekly Report |
+| Friday AM | AR Specialist | Deliver the one-page weekly AR report to the CEO. Flag exceptions only. | Weekly Report |
+
+### Status definitions
+
+| Status | Meaning |
+|---|---|
+| Confirmed | Payment is scheduled in the customer's AP run for a named date |
+| Promised | A person gave us a date, but their AP system hasn't confirmed it |
+| Approved | Invoice is approved in their AP system but not yet scheduled |
+| In process | Sitting in their approval workflow, with no date given yet |
+| Disputed | The customer is contesting the amount, scope or documentation |
+| Unresponsive | No real reply in two or more contact cycles |
+| Not contacted | We haven't tried to contact them about this invoice this cycle |
+| Paid | Payment received |
+
+### Risk rating definitions (judgement guide)
+
+| Rating | Signals |
+|---|---|
+| 🟢 Green | Confirmed status, no open dispute, paid on time 2+ times in a row |
+| 🟡 Amber | Promised but unconfirmed, first payment, date moved, or a documentation issue |
+| 🔴 Red | 2+ broken promises, disputed, unresponsive, more than 30 days past due, or signs of financial distress |
 
 ---
 
-## Using the sample
+## Opening the workbook
 
-- **Google Sheets:** File → Import → Upload `Collection-Operating-System-Sample.xlsx` → *Replace spreadsheet*.
-- **Excel:** open the file directly.
+**Use Google Sheets:** File → Import → Upload → *Replace spreadsheet*. The Scorecard uses Google Sheets array formulas (`SORT`, `UNIQUE`, `FILTER`, `MAP`, `LAMBDA`), so Excel will show those columns as static values instead of recalculating them. The KPI tiles use `TODAY()`, so they move with the calendar.
 
-The KPI tiles use `TODAY()`, so they move with the calendar. The sample's dates are set around November 2026.
-
-> Excel limits tab names to 31 characters, so two tabs in this sample have shorter names than in my working version: **Weekly AR Collections (CEO)** and **Customer Reliability Scorecard**.
+> Excel limits tab names to 31 characters, so two tabs are named **Weekly AR Collections (CEO)** and **Customer Reliability Scorecard**.
 
 ---
 
 ## Optional: automation script
 
-[`src/Code.gs`](src/Code.gs) is the Google Apps Script I wrote to automate the weekly routine in my working copy. It isn't needed to use the sheets. It adds a menu that:
-- refreshes the Invoices tab from QuickBooks Online,
-- loads new invoices into the CEO view,
-- marks paid invoices,
-- archives them to the Master AR Log,
-- rebuilds the KPI tiles,
-- audits the log for duplicates.
-
-Setting it up requires your own QuickBooks developer app. The `CLIENT_ID`, `CLIENT_SECRET` and `REDIRECT_URI` go in Script Properties and are never stored in the code.
+[`src/Code.gs`](src/Code.gs) is a Google Apps Script that can automate the weekly routine: loading invoices, marking payments, archiving to the Master AR Log, rebuilding the KPI tiles and auditing the log. **It isn't needed to use the workbook, and this repository isn't connected to any accounting system.** To use it you need your own QuickBooks Online developer app, with its credentials stored in Script Properties (never in the code).
