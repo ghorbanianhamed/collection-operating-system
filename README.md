@@ -1,5 +1,17 @@
 # Collection Operating System
 
+![JavaScript](https://img.shields.io/static/v1?label=&message=JavaScript&color=F7DF1E&style=flat-square&logo=javascript&logoColor=black)
+![Google Apps Script](https://img.shields.io/static/v1?label=&message=Google%20Apps%20Script&color=4285F4&style=flat-square&logo=googleappsscript&logoColor=white)
+![Google Sheets](https://img.shields.io/static/v1?label=&message=Google%20Sheets&color=34A853&style=flat-square&logo=googlesheets&logoColor=white)
+![Excel](https://img.shields.io/static/v1?label=&message=Excel&color=217346&style=flat-square&logo=microsoftexcel&logoColor=white)
+![QuickBooks API](https://img.shields.io/static/v1?label=QuickBooks&message=API%20integration&color=2CA01C&style=flat-square&logo=quickbooks&logoColor=white)
+![OAuth 2.0](https://img.shields.io/static/v1?label=Auth&message=OAuth%202.0&color=EB5424&style=flat-square)
+![Credit risk](https://img.shields.io/static/v1?label=Credit%20risk&message=customer%20scoring&color=B42318&style=flat-square)
+![Accounts receivable](https://img.shields.io/static/v1?label=Accounts%20receivable&message=collections&color=475569&style=flat-square)
+![Pricing](https://img.shields.io/static/v1?label=Pricing&message=payment%20terms%20strategy&color=B45309&style=flat-square)
+![Financial reporting](https://img.shields.io/static/v1?label=Financial&message=KPI%20reporting&color=0F766E&style=flat-square)
+![Automation](https://img.shields.io/static/v1?label=Process&message=automation&color=5C4EE5&style=flat-square)
+
 **The point of this system is to rate every customer on how reliably they pay, calculate their risk rate, and use that rating to decide how hard to follow up with them and what payment terms and pricing to offer them next time.**
 
 This is the accounts-receivable (AR) collections system I designed and built. It has two parts:
