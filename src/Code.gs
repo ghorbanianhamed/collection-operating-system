@@ -984,7 +984,9 @@ function updateStatusDropdowns() {
 function showSupportModal() {
   SpreadsheetApp.getUi().alert(
     'QuickBooks App Support',
-    'For technical support, contact support@yourcompany.com.\n\nTo reconnect your account, choose "Reset Connection / Logout".',
+    'For technical support, contact ' +
+      (PropertiesService.getScriptProperties().getProperty('SUPPORT_CONTACT') || 'your system administrator') +
+      '.\n\nTo reconnect your account, choose "Reset Connection / Logout".',
     SpreadsheetApp.getUi().ButtonSet.OK
   );
 }

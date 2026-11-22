@@ -68,7 +68,7 @@ All queries page through results with `STARTPOSITION` / `MAXRESULTS` (`qboQueryA
 1. Create an app at [developer.intuit.com](https://developer.intuit.com) with the `com.intuit.quickbooks.accounting` scope.
 2. In Google Sheets, open **Extensions → Apps Script** and paste in `src/Code.gs`.
 3. Deploy it as a **Web App** and copy the URL.
-4. In **Project Settings → Script Properties**, add `CLIENT_ID`, `CLIENT_SECRET` and `REDIRECT_URI` (the Web App URL).
+4. In **Project Settings → Script Properties**, add `CLIENT_ID`, `CLIENT_SECRET` and `REDIRECT_URI` (the Web App URL). Optionally add `SUPPORT_CONTACT`, the contact shown under Help & Support.
 5. Add the same URL as a Redirect URI in the Intuit portal, reload the sheet, then click **QuickBooks Integration → Authorize App**.
 
 > Anyone with edit access to the spreadsheet can read Script Properties, which hold the credentials, so only give edit access to people you trust with your books.
