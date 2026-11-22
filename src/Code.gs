@@ -1,5 +1,5 @@
 /**
- * QUICKBOOKS ONLINE → GOOGLE SHEETS AR INTEGRATION (NATIVE - NO LIBRARIES REQUIRED)
+ * COLLECTION OPERATING SYSTEM — QuickBooks Online → Google Sheets AR collections tracker
  *
  * Changes from the previous version are marked "FIX:" in the comments.
  */

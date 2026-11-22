@@ -1,4 +1,6 @@
-# QuickBooks Online → Google Sheets AR Collections Tracker
+# Collection Operating System
+
+**QuickBooks Online → Google Sheets AR collections tracker**
 
 A Google Apps Script that connects a Google Sheet to QuickBooks Online and turns it into a weekly accounts-receivable collections dashboard. It uses no external libraries: OAuth 2.0 and the QBO REST API are called directly with `UrlFetchApp`.
 
