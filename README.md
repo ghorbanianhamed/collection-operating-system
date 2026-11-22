@@ -7,9 +7,40 @@ This is the accounts-receivable (AR) collections system I designed and built. It
 1. **A QuickBooks Online integration** written in JavaScript (Google Apps Script). It pulls invoices and payments straight from QuickBooks into Google Sheets.
 2. **A customer-rating workbook** that turns every payment into an on-time reliability rate, a 🟢 / 🟡 / 🔴 risk rating, and recommended terms for that customer's next order.
 
-> 📊 **Workbook:** [`sample/Collections-Operating-System.xlsx`](sample/Collections-Operating-System.xlsx). Its first tab, **QuickBooks Integration**, documents the whole process.
 > 💻 **Script:** [`src/Code.gs`](src/Code.gs)
+> 📊 **Workbook:** [download `Collections-Operating-System.xlsx`](https://github.com/ghorbanianhamed/collection-operating-system/raw/main/sample/Collections-Operating-System.xlsx). GitHub can't preview Excel files, so **see the screenshots below, or browse each tab as a table** in [`sample/csv/`](sample/csv).
 > The structure, formulas and code are the real ones. **The data covers 255 customers, shown as codes `CUST-001` … `CUST-255`, and 1,300 paid invoices. All invoice numbers and amounts are fictional.**
+
+---
+
+## See the workbook
+
+| Tab | Screenshot | Browse in GitHub |
+|---|---|---|
+| **QuickBooks Integration** | [page 1](docs/screenshots/quickbooks-integration-1.png) · [page 2](docs/screenshots/quickbooks-integration-2.png) | (documentation tab) |
+| **Weekly AR Collections (CFO)** | [view](docs/screenshots/weekly-ar-collections-cfo.png) | [weekly-ar-collections-cfo.csv](sample/csv/weekly-ar-collections-cfo.csv) |
+| **Customer Reliability Scorecard** | [view](docs/screenshots/customer-reliability-scorecard.png) | [customer-reliability-scorecard.csv](sample/csv/customer-reliability-scorecard.csv) (all 255 customers) |
+| **Master AR Log** | [view](docs/screenshots/master-ar-log.png) | [master-ar-log.csv](sample/csv/master-ar-log.csv) (all 1,300 invoices) |
+| **Invoices** | [view](docs/screenshots/invoices.png) | [invoices.csv](sample/csv/invoices.csv) |
+
+### Customer Reliability Scorecard: each customer's risk rate, rating and terms
+![Customer Reliability Scorecard](docs/screenshots/customer-reliability-scorecard.png)
+
+### Weekly AR Collections (CFO): the weekly report, with each customer's live rating and terms
+![Weekly AR Collections (CFO)](docs/screenshots/weekly-ar-collections-cfo.png)
+
+### QuickBooks Integration tab: how the integration works
+![QuickBooks Integration tab](docs/screenshots/quickbooks-integration-1.png)
+
+<details>
+<summary>More screenshots: Master AR Log and Invoices</summary>
+
+![Master AR Log](docs/screenshots/master-ar-log.png)
+
+![Invoices](docs/screenshots/invoices.png)
+
+![QuickBooks Integration tab, page 2](docs/screenshots/quickbooks-integration-2.png)
+</details>
 
 ---
 
