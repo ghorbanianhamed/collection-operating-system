@@ -19,11 +19,11 @@ This is the accounts-receivable (AR) collections system I designed and built. It
 flowchart TD
     QBO[QuickBooks Online] -->|OAuth 2.0 + REST API| JS[Google Apps Script<br/>JavaScript]
     JS -->|1. Pull Invoices| INV[Invoices tab]
-    INV -->|2. Load New Invoices| CEO[Weekly AR Collections CEO]
-    QBO -->|3. Sync Paid Dates| CEO
-    CEO -->|4. Archive Paid Invoices| LOG[Master AR Log]
+    INV -->|2. Load New Invoices| CFO[Weekly AR Collections CFO]
+    QBO -->|3. Sync Paid Dates| CFO
+    CFO -->|4. Archive Paid Invoices| LOG[Master AR Log]
     LOG -->|formulas| SC[Customer Reliability Scorecard<br/>reliability % → 🟢🟡🔴 → terms]
-    SC -->|rating + terms on every open invoice| CEO
+    SC -->|rating + terms on every open invoice| CFO
 ```
 
 ---
@@ -38,10 +38,10 @@ The script adds a **QuickBooks Integration** menu to Google Sheets:
 |---|---|---|---|
 | **Authorize App** | `startOAuthFlow()` → `doGet()` | Opens the Intuit login. After approval, Intuit redirects back to the script's web app. The app swaps the one-time code for access and refresh tokens and stores them in Script Properties. | — |
 | **1. Pull Invoices from QBO** | `fetchInvoices()` | Queries every open Invoice and Credit Memo (1,000 per page), sorts them by customer, writes the list with a grand total, and highlights overdue due dates. | Invoices |
-| **2. Load New Invoices to Weekly Report** | `loadNewInvoicesToWeeklyReport()` | Adds invoices due in the next 14 days or already past due (balance over $2) that aren't on the report yet. Adds the Status dropdown and the Risk Rating / Recommended Terms lookups, then sorts by due date. | Weekly AR Collections (CEO) |
-| **3. Sync Paid Dates from QBO** | `syncPaidDatesFromQBO()` | Asks QuickBooks which invoices are now fully paid, finds the Payment applied to each one, marks the row **Paid** and writes the real payment date. Warns about rows marked Paid that QuickBooks doesn't show as paid. | Weekly AR Collections (CEO) |
+| **2. Load New Invoices to Weekly Report** | `loadNewInvoicesToWeeklyReport()` | Adds invoices due in the next 14 days or already past due (balance over $2) that aren't on the report yet. Adds the Status dropdown and the Risk Rating / Recommended Terms lookups, then sorts by due date. | Weekly AR Collections (CFO) |
+| **3. Sync Paid Dates from QBO** | `syncPaidDatesFromQBO()` | Asks QuickBooks which invoices are now fully paid, finds the Payment applied to each one, marks the row **Paid** and writes the real payment date. Warns about rows marked Paid that QuickBooks doesn't show as paid. | Weekly AR Collections (CFO) |
 | **4. Archive Paid Invoices** | `closeOutLastWeek()` | Moves confirmed-paid rows to the Master AR Log. Refuses rows that QuickBooks still shows open, and never logs the same invoice twice. **This is what feeds the customer ratings.** | Master AR Log |
-| **Accident-Proofing** | `buildModernCEODashboardHeader()` | Rebuilds the six KPI tiles and their live formulas if someone breaks the top of the report. | Weekly AR Collections (CEO) |
+| **Accident-Proofing** | `buildModernCFODashboardHeader()` | Rebuilds the six KPI tiles and their live formulas if someone breaks the top of the report. | Weekly AR Collections (CFO) |
 | **Audit Master AR Log** | `auditMasterARLog()` | Highlights duplicate rows, and rows logged as paid that QuickBooks still shows open. Deletes nothing. | Master AR Log |
 | **Reset Connection / Logout** | `clearOAuthTokens()` | Revokes the token at Intuit and clears the stored credentials. | — |
 
@@ -105,12 +105,12 @@ Customers are identified by **customer codes** (`CUST-001` … `CUST-255`) inste
 | Tab | Purpose |
 |---|---|
 | **QuickBooks Integration** | Documentation of the integration: data flow, the menu and its JavaScript functions, OAuth, API queries, rating rules and the weekly routine |
-| **Weekly AR Collections (CEO)** | One-page weekly report: six KPI tiles plus every invoice due in the next 14 days or past due, with each customer's live rating and terms |
+| **Weekly AR Collections (CFO)** | One-page weekly report: six KPI tiles plus every invoice due in the next 14 days or past due, with each customer's live rating and terms |
 | **Customer Reliability Scorecard** | Builds itself from the Master AR Log: total invoices, on-time payments, missed promises, **reliability %**, average days late, **risk rating**, **recommended terms** |
 | **Master AR Log** | Permanent history of paid invoices (1,300 in the sample); **On Time?** and **Days Variance** are calculated |
 | **Invoices** | The open invoices and credit memos pulled from QuickBooks, with a grand total |
 
-### KPI tiles on the CEO report
+### KPI tiles on the CFO report
 
 | Tile | What it shows |
 |---|---|
@@ -137,4 +137,4 @@ Customers are identified by **customer codes** (`CUST-001` … `CUST-255`) inste
 
 **Use Google Sheets:** File → Import → Upload → *Replace spreadsheet*. The Scorecard uses Google Sheets array formulas (`SORT`, `UNIQUE`, `FILTER`, `MAP`, `LAMBDA`), so Excel shows those columns as static values instead of recalculating them.
 
-> Excel limits tab names to 31 characters, so two tabs are named **Weekly AR Collections (CEO)** and **Customer Reliability Scorecard**.
+> Excel limits tab names to 31 characters, so two tabs are named **Weekly AR Collections (CFO)** and **Customer Reliability Scorecard**.

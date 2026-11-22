@@ -10,12 +10,12 @@ var REVOKE_URL             = 'https://developer.api.intuit.com/v2/oauth2/tokens/
 var PRODUCTION_API_URL     = 'https://quickbooks.api.intuit.com/v3/company/';
 var QBO_MINOR_VERSION      = '75';
 
-var CEO_TAB       = 'Weekly AR Collections (CEO)';
+var CFO_TAB       = 'Weekly AR Collections (CFO)';
 var MASTER_TAB    = 'Master AR Log';
 var INVOICES_TAB  = 'Invoices';
 var SCORECARD_TAB = 'Customer Reliability Scorecard';
 var TABLE1_TITLE  = 'UPCOMING & OPEN INVOICES';
-var CEO_COLS      = 12;   // A..L on the CEO View (L = Actual Paid Date)
+var CFO_COLS      = 12;   // A..L on the CFO View (L = Actual Paid Date)
 var MIN_BALANCE   = 2;    // ignore penny balances left over in QBO
 var STATUS_LIST   = ['Confirmed', 'Promised', 'Approved', 'In process', 'Disputed',
                      'Unresponsive', 'Not contacted', 'Paid'];
@@ -31,7 +31,7 @@ function onOpen() {
     .addItem('2. Load New Invoices to Weekly Report', 'loadNewInvoicesToWeeklyReport')
     .addItem('3. Sync Paid Dates from QBO', 'syncPaidDatesFromQBO')
     .addItem('4. Archive Paid Invoices', 'closeOutLastWeek')
-    .addItem('Accident-Proofing', 'buildModernCEODashboardHeader')
+    .addItem('Accident-Proofing', 'buildModernCFODashboardHeader')
     .addItem('Audit Master AR Log', 'auditMasterARLog')
     .addSeparator()
     .addItem('Help & Support', 'showSupportModal')
@@ -430,7 +430,7 @@ function populateInvoicesToSheet(invoices) {
 }
 
 /* =========================================================================
- * TABLE 1 HELPERS (CEO VIEW)
+ * TABLE 1 HELPERS (CFO VIEW)
  * ========================================================================= */
 
 /**
@@ -464,7 +464,7 @@ function getTable1Bounds_(sheet) {
 function sortTable1_(sheet) {
   var t = getTable1Bounds_(sheet);
   if (t && t.numRows > 1) {
-    sheet.getRange(t.firstRow, 1, t.numRows, CEO_COLS).sort({ column: 4, ascending: true });
+    sheet.getRange(t.firstRow, 1, t.numRows, CFO_COLS).sort({ column: 4, ascending: true });
   }
 }
 
@@ -476,10 +476,10 @@ function loadNewInvoicesToWeeklyReport() {
   var ui = SpreadsheetApp.getUi();
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var rawSheet = ss.getSheetByName(INVOICES_TAB);
-  var weeklySheet = ss.getSheetByName(CEO_TAB);
+  var weeklySheet = ss.getSheetByName(CFO_TAB);
 
   if (!rawSheet || !weeklySheet) {
-    ui.alert('Missing tabs. Make sure you have "' + INVOICES_TAB + '" and "' + CEO_TAB + '".');
+    ui.alert('Missing tabs. Make sure you have "' + INVOICES_TAB + '" and "' + CFO_TAB + '".');
     return;
   }
   var t = getTable1Bounds_(weeklySheet);
@@ -521,7 +521,7 @@ function loadNewInvoicesToWeeklyReport() {
 
   if (newRows.length === 0) {
     sortTable1_(weeklySheet);
-    ui.alert('No new invoices to add. Everything due in the next 14 days (or past due) is already on the CEO View.');
+    ui.alert('No new invoices to add. Everything due in the next 14 days (or past due) is already on the CFO View.');
     return;
   }
 
@@ -532,7 +532,7 @@ function loadNewInvoicesToWeeklyReport() {
   weeklySheet.insertRowsAfter(insertAfter, n);
   var start = insertAfter + 1;
 
-  weeklySheet.getRange(start, 1, n, CEO_COLS)
+  weeklySheet.getRange(start, 1, n, CFO_COLS)
     .clearDataValidations()
     .setBackground(null)
     .setFontColor('#000000')
@@ -573,7 +573,7 @@ function loadNewInvoicesToWeeklyReport() {
  */
 function syncPaidDatesFromQBO() {
   var ui = SpreadsheetApp.getUi();
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CEO_TAB);
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CFO_TAB);
   var t = sheet ? getTable1Bounds_(sheet) : null;
   if (!t || t.numRows === 0) {
     ui.alert('No active invoices to check.');
@@ -593,7 +593,7 @@ function syncPaidDatesFromQBO() {
     var sinceStr = Utilities.formatDate(since, Session.getScriptTimeZone(), 'yyyy-MM-dd');
     var paidMap = buildPaidMap_(accessToken, realmId, sinceStr);
 
-    var data = sheet.getRange(t.firstRow, 1, t.numRows, CEO_COLS).getValues();
+    var data = sheet.getRange(t.firstRow, 1, t.numRows, CFO_COLS).getValues();
     var statuses = data.map(function (r) { return [r[5]]; });
     var dates = data.map(function (r) { return [r[11]]; });
 
@@ -621,7 +621,7 @@ function syncPaidDatesFromQBO() {
 
     for (var j = 0; j < statuses.length; j++) {
       if (statuses[j][0] === 'Paid') {
-        sheet.getRange(t.firstRow + j, 1, 1, CEO_COLS).setBackground('#d9ead3');
+        sheet.getRange(t.firstRow + j, 1, 1, CFO_COLS).setBackground('#d9ead3');
       }
     }
 
@@ -652,21 +652,21 @@ function syncPaidDatesFromQBO() {
 function closeOutLastWeek() {
   var ui = SpreadsheetApp.getUi();
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var ceoSheet = ss.getSheetByName(CEO_TAB);
+  var cfoSheet = ss.getSheetByName(CFO_TAB);
   var masterSheet = ss.getSheetByName(MASTER_TAB);
-  if (!ceoSheet || !masterSheet) {
-    ui.alert('Missing "' + CEO_TAB + '" or "' + MASTER_TAB + '" tab.');
+  if (!cfoSheet || !masterSheet) {
+    ui.alert('Missing "' + CFO_TAB + '" or "' + MASTER_TAB + '" tab.');
     return;
   }
 
-  var t = getTable1Bounds_(ceoSheet);
+  var t = getTable1Bounds_(cfoSheet);
   if (!t || t.numRows === 0) {
     ui.alert('No active invoices to archive.');
     return;
   }
 
   var openBalances = getOpenBalancesFromInvoicesTab_(ss);
-  var data = ceoSheet.getRange(t.firstRow, 1, t.numRows, CEO_COLS).getValues();
+  var data = cfoSheet.getRange(t.firstRow, 1, t.numRows, CFO_COLS).getValues();
 
   // Doc Number -> row number in the Master AR Log
   var masterIndex = {};
@@ -707,7 +707,7 @@ function closeOutLastWeek() {
       data[i][7],  // H Next Touchpoint
       data[i][8],  // I Risk
       data[i][9],  // J Risk Note
-      data[i][11]  // K Actual Paid Date (from CEO col L)
+      data[i][11]  // K Actual Paid Date (from CFO col L)
     ];
 
     if (masterIndex[doc]) {
@@ -723,7 +723,7 @@ function closeOutLastWeek() {
       inserted++;
     }
 
-    ceoSheet.deleteRow(t.firstRow + i);
+    cfoSheet.deleteRow(t.firstRow + i);
   }
 
   var msg;
@@ -815,11 +815,11 @@ function auditMasterARLog() {
  * FIX: "Expected This Week" uses the Due Date when no Expected Pay Date is entered,
  *      and leaves out rows already marked Paid.
  */
-function buildModernCEODashboardHeader() {
+function buildModernCFODashboardHeader() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(CEO_TAB);
+  var sheet = ss.getSheetByName(CFO_TAB);
   if (!sheet) {
-    SpreadsheetApp.getUi().alert('Missing "' + CEO_TAB + '" tab.');
+    SpreadsheetApp.getUi().alert('Missing "' + CFO_TAB + '" tab.');
     return;
   }
 
@@ -898,9 +898,9 @@ function buildModernCEODashboardHeader() {
  */
 function updateCustomerRatingChanges() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var ceoSheet = ss.getSheetByName(CEO_TAB);
+  var cfoSheet = ss.getSheetByName(CFO_TAB);
   var scoreSheet = ss.getSheetByName(SCORECARD_TAB);
-  if (!ceoSheet || !scoreSheet) return;
+  if (!cfoSheet || !scoreSheet) return;
 
   var GREEN = '🟢', AMBER = '🟡', RED = '🔴';
 
@@ -917,20 +917,20 @@ function updateCustomerRatingChanges() {
     }
   }
 
-  var table3Header = ceoSheet.createTextFinder('3. CUSTOMER RATING CHANGES').matchEntireCell(false).findNext();
+  var table3Header = cfoSheet.createTextFinder('3. CUSTOMER RATING CHANGES').matchEntireCell(false).findNext();
   var startRow;
   var existingData = [];
 
   if (table3Header) {
     startRow = table3Header.getRow();
-    var lastRow = ceoSheet.getLastRow();
+    var lastRow = cfoSheet.getLastRow();
     if (lastRow > startRow + 1) {
-      existingData = ceoSheet.getRange(startRow + 2, 1, lastRow - (startRow + 1), 4).getValues();
+      existingData = cfoSheet.getRange(startRow + 2, 1, lastRow - (startRow + 1), 4).getValues();
     }
-    ceoSheet.getRange(startRow, 1, 200, 15).clearContent().clearFormat().clearDataValidations();
+    cfoSheet.getRange(startRow, 1, 200, 15).clearContent().clearFormat().clearDataValidations();
   } else {
-    var t = getTable1Bounds_(ceoSheet);
-    startRow = (t ? Math.max(t.lastRow, t.headerRow) : ceoSheet.getLastRow()) + 5;
+    var t = getTable1Bounds_(cfoSheet);
+    startRow = (t ? Math.max(t.lastRow, t.headerRow) : cfoSheet.getLastRow()) + 5;
   }
 
   var previousRatings = {};
@@ -953,26 +953,26 @@ function updateCustomerRatingChanges() {
     }
   }
 
-  ceoSheet.getRange(startRow, 1).setValue('3. CUSTOMER RATING CHANGES').setFontWeight('bold').setFontSize(11);
-  ceoSheet.getRange(startRow + 1, 1, 1, 4)
+  cfoSheet.getRange(startRow, 1).setValue('3. CUSTOMER RATING CHANGES').setFontWeight('bold').setFontSize(11);
+  cfoSheet.getRange(startRow + 1, 1, 1, 4)
     .setValues([['Customer', 'Previous Rating', 'New Rating', 'Reason for Change']])
     .setFontWeight('bold').setBackground('#1C4587').setFontColor('white');
 
   if (outputData.length > 0) {
-    ceoSheet.getRange(startRow + 2, 1, outputData.length, 4).setValues(outputData);
+    cfoSheet.getRange(startRow + 2, 1, outputData.length, 4).setValues(outputData);
     var rule = SpreadsheetApp.newDataValidation().requireValueInList([GREEN, AMBER, RED]).build();
-    ceoSheet.getRange(startRow + 2, 2, outputData.length, 1).setDataValidation(rule);
-    ceoSheet.getRange(startRow + 2, 1, outputData.length, 4).setVerticalAlignment('middle').setWrap(true);
-    ceoSheet.getRange(startRow + 1, 1, outputData.length + 1, 4)
+    cfoSheet.getRange(startRow + 2, 2, outputData.length, 1).setDataValidation(rule);
+    cfoSheet.getRange(startRow + 2, 1, outputData.length, 4).setVerticalAlignment('middle').setWrap(true);
+    cfoSheet.getRange(startRow + 1, 1, outputData.length + 1, 4)
       .setBorder(true, true, true, true, true, true, 'black', SpreadsheetApp.BorderStyle.SOLID);
   } else {
-    ceoSheet.getRange(startRow + 2, 1).setValue('No rating changes this week.');
+    cfoSheet.getRange(startRow + 2, 1).setValue('No rating changes this week.');
   }
 }
 
 /** Re-applies the Status dropdown to every row of Table 1. */
 function updateStatusDropdowns() {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CEO_TAB);
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CFO_TAB);
   var t = getTable1Bounds_(sheet);
   if (!t || t.numRows === 0) return;
   var rule = SpreadsheetApp.newDataValidation()
